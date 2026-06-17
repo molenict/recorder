@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Hypnotherapie Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg: #0d1319;
+    --surface: #151f28;
+    --surface-2: #1c2832;
+    --border: #283641;
+    --text: #e9eef2;
+    --text-muted: #8a99a6;
+    --accent: #5fe3c4;
+    --accent-dim: rgba(95,227,196,0.14);
+    --star: #f0c354;
+    --coral: #e2685c;
+    --lavender: #a78bfa;
+    --radius: 16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(circle at 50% -10%, #16222b 0%, #0d1319 55%);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app{max-width: 480px; margin: 0 auto; padding: 24px 18px 80px;}
+  header.top{margin-bottom: 24px;}
+  header.top h1{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: 28px;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
+  }
+  header.top p{margin:0; color:var(--text-muted); font-size:14px;}
+
+  .storage-warning{
+    display:none;
+    background: rgba(226,104,92,0.1); border:1px solid rgba(226,104,92,0.35);
+    color:#ffb3ac; border-radius:12px; padding:12px 14px; font-size:13px; line-height:1.5;
+    margin-bottom:18px;
+  }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    border:none; border-radius: 12px; padding: 13px 18px;
+    font-family:'Inter'; font-weight:600; font-size:15px;
+    cursor:pointer; transition: transform .15s ease, opacity .15s ease;
+  }
+  .btn:active{transform: scale(0.97);}
+  .btn-primary{background: var(--accent); color:#06231d;}
+  .btn-ghost{background: var(--surface-2); color: var(--text); border:1px solid var(--border);}
+  .btn-danger{background: transparent; color: var(--coral); border:1px solid rgba(226,104,92,0.4);}
+  .btn-block{width:100%;}
+  .btn:disabled{opacity:0.4; cursor:not-allowed;}
+
+  .add-bar{margin-bottom:20px;}
+
+  .empty{
+    text-align:center; padding: 60px 20px; color: var(--text-muted);
+    border: 1px dashed var(--border); border-radius: var(--radius);
+  }
+  .empty p{font-size:15px; line-height:1.5; margin: 0 0 18px;}
+
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    cursor:pointer;
+    transition: border-color .15s ease;
+  }
+  .card:active{border-color: var(--accent);}
+  .card-title{font-family:'Fraunces'; font-weight:600; font-size:17px; margin:0 0 6px;}
+  .card-meta{display:flex; justify-content:space-between; align-items:baseline; color:var(--text-muted); font-size:13px;}
+  .card-meta .avg{display:flex; align-items:center; gap:4px; color:var(--star); font-weight:600;}
+
+  /* detail view */
+  .detail-header{display:flex; align-items:center; gap:8px; margin-bottom:18px;}
+  .back-btn{
+    background:var(--surface-2); border:1px solid var(--border); border-radius:10px;
+    width:38px; height:38px; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; color:var(--text); flex-shrink:0; font-size:18px;
+  }
+  .detail-header h2{font-family:'Fraunces'; font-weight:600; font-size:20px; margin:0; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis;}
+  .icon-btn{
+    background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:18px; padding:6px; flex-shrink:0;
+  }
+
+  .panel{
+    background: var(--surface);
+    border:1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .panel h3{font-family:'Fraunces'; font-weight:600; font-size:16px; margin: 0 0 14px;}
+
+  .breathe-wrap{display:flex; justify-content:center; margin-bottom:18px;}
+  .breathe-circle{
+    width:80px; height:80px; border-radius:50%;
+    background: radial-gradient(circle, var(--accent-dim) 0%, transparent 70%);
+    border: 1.5px solid rgba(95,227,196,0.35);
+  }
+  .breathe-circle.playing{
+    animation: breathe 6s ease-in-out infinite;
+  }
+  @keyframes breathe{
+    0%{ transform: scale(1); opacity:0.6; }
+    50%{ transform: scale(1.35); opacity:1; }
+    100%{ transform: scale(1); opacity:0.6; }
+  }
+
+  audio{width:100%; margin-top:4px;}
+  .audio-error{
+    display:none; font-size:13px; color: var(--coral); margin-top:10px; line-height:1.5;
+  }
+  .audio-hint{font-size:12.5px; color:var(--text-muted); line-height:1.5; margin: 10px 0 0;}
+
+  .question{margin-bottom: 18px;}
+  .question:last-child{margin-bottom:0;}
+  .question label{display:block; font-size:14.5px; margin-bottom:8px; line-height:1.4;}
+  .stars{display:flex; gap:6px;}
+  .star-btn{
+    background:none; border:none; cursor:pointer; padding:2px; font-size:26px; line-height:1;
+    color: var(--border); transition: color .1s ease, transform .1s ease;
+  }
+  .star-btn.filled{color: var(--star);}
+  .star-btn:active{transform: scale(1.15);}
+
+  .save-row{margin-top: 6px;}
+  .validation-msg{font-size:13px; color: var(--coral); margin-top:8px; text-align:center;}
+
+  .stats-grid{display:grid; grid-template-columns: repeat(2,1fr); gap:10px; margin-bottom:16px;}
+  .stat-box{background:var(--surface-2); border-radius:12px; padding:12px 14px;}
+  .stat-box .num{font-family:'Fraunces'; font-size:22px; font-weight:600;}
+  .stat-box .lbl{font-size:11.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em;}
+
+  .chart-wrap{position:relative; height:180px; margin-bottom:4px;}
+
+  .history-item{
+    border-bottom:1px solid var(--border); padding: 12px 0;
+  }
+  .history-item:last-child{border-bottom:none;}
+  .history-date{font-size:13.5px; font-weight:600; margin-bottom:6px;}
+  .history-scores{display:flex; gap:14px; flex-wrap:wrap;}
+  .mini-score{display:flex; align-items:center; gap:5px; font-size:12.5px; color:var(--text-muted);}
+  .mini-score .stars-mini{color: var(--star); letter-spacing:1px;}
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center;
+    padding: 24px; z-index:50;
+  }
+  .modal{
+    background: var(--surface); border:1px solid var(--border); border-radius: var(--radius);
+    padding: 22px; width:100%; max-width: 380px;
+  }
+  .modal h3{font-family:'Fraunces'; margin:0 0 14px; font-size:18px;}
+  .modal label.field-label{display:block; font-size:12.5px; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.04em;}
+  .modal input[type=text]{
+    width:100%; background: var(--surface-2); border:1px solid var(--border); color:var(--text);
+    border-radius:10px; padding:12px 14px; font-size:15px; font-family:'Inter'; margin-bottom:6px;
+  }
+  .modal input[type=text]:focus{outline:none; border-color: var(--accent);}
+  .modal input[type=password]{
+    width:100%; background: var(--surface-2); border:1px solid var(--border); color:var(--text);
+    border-radius:10px; padding:12px 14px; font-size:15px; font-family:'Inter'; margin-bottom:6px;
+  }
+  .modal input[type=password]:focus{outline:none; border-color: var(--accent);}
+  .modal input[type=file]{
+    width:100%; font-size:13px; color:var(--text-muted); margin-bottom:8px;
+  }
+  .record-controls{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .record-controls .btn{padding:10px 14px; font-size:14px;}
+  #record-timer{font-family:'Fraunces'; font-size:15px; font-weight:600; color:var(--text-muted); min-width:48px;}
+  #record-preview{margin-bottom:10px;}
+  .record-actions{display:flex; gap:10px; margin: 0 0 10px;}
+  .record-actions .btn{flex:1; padding:10px 14px; font-size:14px;}
+  .divider-label{
+    font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em;
+    text-align:center; margin: 18px 0 14px; position:relative;
+  }
+  .divider-label::before, .divider-label::after{
+    content:''; position:absolute; top:50%; width:38%; height:1px; background:var(--border);
+  }
+  .divider-label::before{left:0;}
+  .divider-label::after{right:0;}
+  .field-hint{font-size:12px; color:var(--text-muted); margin: 0 0 16px; line-height:1.4;}
+  .test-row{display:flex; align-items:center; gap:10px; margin-bottom:16px;}
+  .test-status{font-size:12.5px;}
+  .test-status.ok{color: var(--accent);}
+  .test-status.fail{color: var(--coral);}
+  .modal-actions{display:flex; gap:10px;}
+  .modal-actions .btn{flex:1;}
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background: var(--surface-2); border:1px solid var(--border); color:var(--text);
+    padding:12px 18px; border-radius:12px; font-size:14px; z-index:60;
+    opacity:0; pointer-events:none; transition: opacity .25s ease;
+  }
+  .toast.show{opacity:1;}
+  .toast.error{border-color: rgba(226,104,92,0.5); color:#ffb3ac;}
+
+  .hidden{display:none !important;}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <header class="top">
+    <h1>Hypnotherapie Tracker</h1>
+    <p>Je opnames, beoordelingen en voortgang</p>
+  </header>
+
+  <div class="storage-warning" id="storage-warning">
+    Lokale opslag is niet beschikbaar in deze weergave, dus wijzigingen worden nu niet bewaard. Open deze pagina via je GitHub Pages-link om alles normaal op te slaan.
+  </div>
+
+  <!-- LIST VIEW -->
+  <div id="view-list">
+    <div class="add-bar" style="display:flex; gap:10px;">
+      <button class="btn btn-primary btn-block" id="btn-add-recording">+ Nieuwe opname</button>
+      <button class="btn btn-ghost" id="btn-open-settings" title="GitHub-instellingen" style="width:48px; flex-shrink:0; padding:13px;">⚙</button>
+    </div>
+    <div id="recordings-list"></div>
+  </div>
+
+  <!-- DETAIL VIEW -->
+  <div id="view-detail" class="hidden">
+    <div class="detail-header">
+      <button class="back-btn" id="btn-back">←</button>
+      <h2 id="detail-title"></h2>
+      <button class="icon-btn" id="btn-edit-recording" title="Bewerken">✎</button>
+      <button class="icon-btn" id="btn-delete-recording" title="Verwijderen">🗑</button>
+    </div>
+
+    <div class="panel">
+      <h3>Opname afspelen</h3>
+      <div class="breathe-wrap"><div class="breathe-circle" id="breathe"></div></div>
+      <audio id="player" controls></audio>
+      <p class="audio-error" id="audio-error">Bestand niet gevonden. Controleer of de bestandsnaam exact overeenkomt met het bestand in de <code>audio</code>-map (inclusief hoofdletters en extensie).</p>
+      <p class="audio-hint">Bestand: <span id="current-filename"></span></p>
+    </div>
+
+    <div class="panel">
+      <h3>Hoe ging deze sessie?</h3>
+      <div id="rating-questions"></div>
+      <div class="save-row">
+        <button class="btn btn-primary btn-block" id="btn-save-session">Sessie opslaan</button>
+        <div class="validation-msg hidden" id="validation-msg">Geef bij elke vraag een score voordat je opslaat.</div>
+      </div>
+    </div>
+
+    <div class="panel" id="stats-panel">
+      <h3>Overzicht</h3>
+      <div class="stats-grid" id="stats-grid"></div>
+      <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+    </div>
+
+    <div class="panel">
+      <h3>Geschiedenis</h3>
+      <div id="history-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD / EDIT RECORDING MODAL -->
+<div class="modal-overlay hidden" id="modal-overlay">
+  <div class="modal">
+    <h3 id="modal-heading">Nieuwe opname</h3>
+    <label class="field-label" for="new-title-input">Titel</label>
+    <input type="text" id="new-title-input" placeholder="Bijv. 'Ontspanning hand'" maxlength="80">
+    <div style="height:14px;"></div>
+
+    <label class="field-label">Opname maken in de app</label>
+    <div class="record-controls">
+      <button class="btn btn-ghost" id="btn-start-record" type="button">● Opname starten</button>
+      <button class="btn btn-danger hidden" id="btn-stop-record" type="button">■ Stop</button>
+      <span id="record-timer">00:00</span>
+    </div>
+    <audio id="record-preview" controls class="hidden"></audio>
+    <div class="record-actions hidden" id="record-actions">
+      <button class="btn btn-ghost" id="btn-rerecord" type="button">Opnieuw opnemen</button>
+      <button class="btn btn-primary" id="btn-use-recording" type="button">Gebruik deze opname</button>
+    </div>
+    <div class="test-row" style="margin-bottom:6px;">
+      <span class="test-status" id="record-status"></span>
+    </div>
+
+    <div class="divider-label">of</div>
+
+    <label class="field-label" for="gh-upload-input">Bestand uploaden vanaf je telefoon</label>
+    <input type="file" id="gh-upload-input" accept="audio/*,.m4a,.mp3,.wav,.aac,.caf,.flac,.ogg">
+    <p class="field-hint">Zie je je bestand niet staan in Bestanden-app? Kies linksboven "Bladeren" en zoek de map waar je opname is opgeslagen (bijv. "Op mijn iPhone" of iCloud Drive).</p>
+    <div class="test-row" style="margin-bottom:16px;">
+      <span class="test-status" id="upload-status"></span>
+    </div>
+
+    <div class="divider-label">of</div>
+
+    <label class="field-label" for="new-filename-input">Typ de bestandsnaam handmatig</label>
+    <input type="text" id="new-filename-input" placeholder="Bijv. ontspanning-hand.mp3">
+    <p class="field-hint">Gebruik dit veld als het bestand al eerder in de <code>audio</code>-map is gezet.</p>
+    <div class="test-row">
+      <button class="btn btn-ghost" id="btn-test-file" type="button">Bestand testen</button>
+      <span class="test-status" id="test-status"></span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btn-cancel-add">Annuleren</button>
+      <button class="btn btn-primary" id="btn-confirm-add">Toevoegen</button>
+    </div>
+  </div>
+</div>
+
+<!-- GITHUB SETTINGS MODAL -->
+<div class="modal-overlay hidden" id="settings-overlay">
+  <div class="modal">
+    <h3>GitHub-instellingen</h3>
+    <label class="field-label" for="gh-owner-input">Gebruikersnaam / organisatie</label>
+    <input type="text" id="gh-owner-input" placeholder="Bijv. andre123">
+    <div style="height:10px;"></div>
+    <label class="field-label" for="gh-repo-input">Repository naam</label>
+    <input type="text" id="gh-repo-input" placeholder="Bijv. hypnotherapie-tracker">
+    <div style="height:10px;"></div>
+    <label class="field-label" for="gh-token-input">Personal access token</label>
+    <input type="password" id="gh-token-input" placeholder="ghp_… of github_pat_…">
+    <p class="field-hint">
+      Makkelijkste manier: tik op de knop hieronder, log in op GitHub, scroll naar onder en tik op <strong>"Generate token"</strong>. Kopieer de token direct (je ziet hem daarna nooit meer) en plak hem hierboven.
+    </p>
+    <div class="test-row" style="margin-bottom:16px;">
+      <a class="btn btn-ghost" id="btn-create-token" href="https://github.com/settings/tokens/new?scopes=repo&description=Hypnotherapie%20Tracker" target="_blank" rel="noopener" style="text-decoration:none;">Token aanmaken op GitHub</a>
+    </div>
+    <p class="field-hint">Deze link zet de juiste optie ("repo") al aan. Die geeft de app toegang tot je eigen repositories — niet tot iets anders van je account.</p>
+    <div class="test-row">
+      <button class="btn btn-ghost" id="btn-test-connection" type="button">Verbinding testen</button>
+      <span class="test-status" id="gh-test-status"></span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btn-cancel-settings">Annuleren</button>
+      <button class="btn btn-primary" id="btn-save-settings">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const QUESTIONS = [
+  "Hoe goed kon je je ontspannen?",
+  "Hoe erg waren de klachten tijdens de opname?",
+  "Kon je deze klachten met behulp van de opname verminderen?",
+  "Hoe ontspannen kwam je uit de opname?"
+];
+const Q_COLORS = ['#5fe3c4', '#e2685c', '#a78bfa', '#f0c354'];
+const Q_SHORT = ['Ontspanning', 'Klachten', 'Vermindering', 'Na afloop'];
+const STORAGE_KEY = 'fns_hypno_data';
+const GH_CONFIG_KEY = 'fns_gh_config';
+
+function getGhConfig(){
+  try{
+    const raw = localStorage.getItem(GH_CONFIG_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){
+    return null;
+  }
+}
+
+function saveGhConfig(cfg){
+  try{
+    localStorage.setItem(GH_CONFIG_KEY, JSON.stringify(cfg));
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+let state = { recordings: [], sessions: [] };
+let currentRecordingId = null;
+let currentScores = [0,0,0,0];
+let trendChart = null;
+let editingId = null;
+let storageAvailable = true;
+let mediaRecorder = null;
+let micStream = null;
+let recordedChunks = [];
+let recordedBlob = null;
+let recordingStartTime = null;
+let recordingTimerInterval = null;
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) state = JSON.parse(raw);
+  }catch(e){
+    storageAvailable = false;
+    document.getElementById('storage-warning').style.display = 'block';
+  }
+}
+
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }catch(e){
+    storageAvailable = false;
+    document.getElementById('storage-warning').style.display = 'block';
+    showToast('Opslaan is niet gelukt in deze weergave.', true);
+  }
+}
+
+function showToast(msg, isError){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(()=>{ t.className = 'toast'; }, 2600);
+}
+
+function uid(){
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+}
+
+function fmtDateTime(iso){
+  const d = new Date(iso);
+  const date = d.toLocaleDateString('nl-NL', { day:'numeric', month:'long', year:'numeric' });
+  const time = d.toLocaleTimeString('nl-NL', { hour:'2-digit', minute:'2-digit' });
+  return date + ', ' + time;
+}
+
+function fmtDateShort(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString('nl-NL', { day:'numeric', month:'short' });
+}
+
+function getSessionsFor(id){
+  return state.sessions
+    .filter(s => s.recordingId === id)
+    .sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+}
+
+function avgScore(sessions, qIndex){
+  if(sessions.length === 0) return null;
+  const sum = sessions.reduce((acc,s)=> acc + s.scores[qIndex], 0);
+  return sum / sessions.length;
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function audioUrl(filename){
+  return 'audio/' + filename.split('/').map(encodeURIComponent).join('/');
+}
+
+/* ---------- LIST VIEW ---------- */
+
+function renderList(){
+  const container = document.getElementById('recordings-list');
+  if(state.recordings.length === 0){
+    container.innerHTML = `<div class="empty"><p>Nog geen opnames toegevoegd.<br>Upload eerst een audiobestand naar de <code>audio</code>-map in je repo, voeg dan hier de opname toe.</p></div>`;
+    return;
+  }
+  const sorted = [...state.recordings].sort((a,b)=> new Date(b.createdAt) - new Date(a.createdAt));
+  container.innerHTML = sorted.map(rec => {
+    const sessions = getSessionsFor(rec.id);
+    const count = sessions.length;
+    const avg = avgScore(sessions, 0);
+    const last = count > 0 ? fmtDateShort(sessions[0].timestamp) : null;
+    return `
+      <div class="card" data-id="${rec.id}">
+        <p class="card-title">${escapeHtml(rec.title)}</p>
+        <div class="card-meta">
+          <span>${count} keer beluisterd${last ? ' · laatst ' + last : ''}</span>
+          ${avg !== null ? `<span class="avg">★ ${avg.toFixed(1)}</span>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  container.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', () => openDetail(card.dataset.id));
+  });
+}
+
+/* ---------- DETAIL VIEW ---------- */
+
+function openDetail(id){
+  currentRecordingId = id;
+  currentScores = [0,0,0,0];
+  document.getElementById('view-list').classList.add('hidden');
+  document.getElementById('view-detail').classList.remove('hidden');
+  renderDetail();
+}
+
+function closeDetail(){
+  currentRecordingId = null;
+  document.getElementById('player').pause();
+  document.getElementById('breathe').classList.remove('playing');
+  document.getElementById('view-detail').classList.add('hidden');
+  document.getElementById('view-list').classList.remove('hidden');
+  renderList();
+}
+
+function renderDetail(){
+  const rec = state.recordings.find(r => r.id === currentRecordingId);
+  if(!rec) return;
+  document.getElementById('detail-title').textContent = rec.title;
+  document.getElementById('current-filename').textContent = rec.filename;
+  document.getElementById('audio-error').style.display = 'none';
+
+  const player = document.getElementById('player');
+  player.src = audioUrl(rec.filename);
+
+  renderRatingQuestions();
+  renderStats(rec);
+  renderHistory(rec);
+}
+
+function renderRatingQuestions(){
+  const container = document.getElementById('rating-questions');
+  container.innerHTML = QUESTIONS.map((q, qi) => `
+    <div class="question">
+      <label>${q}</label>
+      <div class="stars" data-qi="${qi}">
+        ${[1,2,3,4,5].map(v => `<button type="button" class="star-btn" data-v="${v}">★</button>`).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.stars').forEach(group => {
+    const qi = parseInt(group.dataset.qi, 10);
+    group.querySelectorAll('.star-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentScores[qi] = parseInt(btn.dataset.v, 10);
+        updateStarGroup(group, currentScores[qi]);
+      });
+    });
+  });
+  document.getElementById('validation-msg').classList.add('hidden');
+}
+
+function updateStarGroup(group, value){
+  group.querySelectorAll('.star-btn').forEach(btn => {
+    const v = parseInt(btn.dataset.v, 10);
+    btn.classList.toggle('filled', v <= value);
+  });
+}
+
+function renderStats(rec){
+  const sessions = getSessionsFor(rec.id);
+  const grid = document.getElementById('stats-grid');
+  const count = sessions.length;
+  const avgRelax = avgScore(sessions, 0);
+
+  grid.innerHTML = `
+    <div class="stat-box">
+      <div class="num">${count}</div>
+      <div class="lbl">Keer beluisterd</div>
+    </div>
+    <div class="stat-box">
+      <div class="num">${avgRelax !== null ? avgRelax.toFixed(1) : '—'}</div>
+      <div class="lbl">Gem. ontspanning</div>
+    </div>
+  `;
+
+  renderChart(sessions);
+}
+
+function renderChart(sessions){
+  const canvas = document.getElementById('trendChart');
+  if(trendChart){ trendChart.destroy(); trendChart = null; }
+
+  if(sessions.length < 2){
+    canvas.classList.add('hidden');
+    return;
+  }
+  canvas.classList.remove('hidden');
+
+  const chronological = [...sessions].sort((a,b)=> new Date(a.timestamp) - new Date(b.timestamp)).slice(-15);
+  const labels = chronological.map(s => fmtDateShort(s.timestamp));
+
+  const datasets = QUESTIONS.map((q, qi) => ({
+    label: Q_SHORT[qi],
+    data: chronological.map(s => s.scores[qi]),
+    borderColor: Q_COLORS[qi],
+    backgroundColor: Q_COLORS[qi],
+    tension: 0.35,
+    pointRadius: 3,
+    borderWidth: 2,
+  }));
+
+  trendChart = new Chart(canvas, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      maintainAspectRatio: false,
+      scales: {
+        y: { min: 0, max: 5, ticks: { stepSize: 1, color: '#8a99a6' }, grid: { color: '#283641' } },
+        x: { ticks: { color: '#8a99a6', maxRotation: 0, autoSkip: true }, grid: { display: false } }
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#e9eef2', boxWidth: 10, font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+function renderHistory(rec){
+  const sessions = getSessionsFor(rec.id);
+  const container = document.getElementById('history-list');
+  if(sessions.length === 0){
+    container.innerHTML = `<p style="color:var(--text-muted); font-size:14px; margin:0;">Nog geen sessies beoordeeld.</p>`;
+    return;
+  }
+  container.innerHTML = sessions.map(s => `
+    <div class="history-item">
+      <div class="history-date">${fmtDateTime(s.timestamp)}</div>
+      <div class="history-scores">
+        ${Q_SHORT.map((label, qi) => `
+          <div class="mini-score">
+            <span>${label}</span>
+            <span class="stars-mini">${'★'.repeat(s.scores[qi])}${'☆'.repeat(5 - s.scores[qi])}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ---------- AUDIO EVENTS ---------- */
+
+const playerEl = document.getElementById('player');
+playerEl.addEventListener('play', () => document.getElementById('breathe').classList.add('playing'));
+playerEl.addEventListener('pause', () => document.getElementById('breathe').classList.remove('playing'));
+playerEl.addEventListener('ended', () => document.getElementById('breathe').classList.remove('playing'));
+playerEl.addEventListener('error', () => document.getElementById('audio-error').style.display = 'block');
+
+/* ---------- IN-APP RECORDING ---------- */
+
+function getSupportedMimeType(){
+  const candidates = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
+  for(const type of candidates){
+    if(window.MediaRecorder && MediaRecorder.isTypeSupported(type)) return type;
+  }
+  return '';
+}
+
+function extForMime(mime){
+  if(!mime) return 'm4a';
+  if(mime.includes('mp4')) return 'm4a';
+  if(mime.includes('webm')) return 'webm';
+  if(mime.includes('ogg')) return 'ogg';
+  return 'audio';
+}
+
+function updateRecordTimer(){
+  const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const s = String(elapsed % 60).padStart(2, '0');
+  document.getElementById('record-timer').textContent = `${m}:${s}`;
+}
+
+async function startRecording(){
+  const statusEl = document.getElementById('record-status');
+  if(!navigator.mediaDevices || !window.MediaRecorder){
+    statusEl.textContent = 'Opnemen wordt niet ondersteund in deze browser.';
+    statusEl.className = 'test-status fail';
+    return;
+  }
+  try{
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  }catch(e){
+    statusEl.textContent = 'Geen toegang tot de microfoon. Geef toestemming in je instellingen.';
+    statusEl.className = 'test-status fail';
+    return;
+  }
+  const mimeType = getSupportedMimeType();
+  recordedChunks = [];
+  try{
+    mediaRecorder = mimeType ? new MediaRecorder(micStream, { mimeType }) : new MediaRecorder(micStream);
+  }catch(e){
+    statusEl.textContent = 'Opnemen wordt niet ondersteund in deze browser.';
+    statusEl.className = 'test-status fail';
+    micStream.getTracks().forEach(t => t.stop());
+    return;
+  }
+  mediaRecorder.addEventListener('dataavailable', (e) => {
+    if(e.data && e.data.size > 0) recordedChunks.push(e.data);
+  });
+  mediaRecorder.addEventListener('stop', () => {
+    const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || mimeType || 'audio/mp4' });
+    recordedBlob = blob;
+    const preview = document.getElementById('record-preview');
+    preview.src = URL.createObjectURL(blob);
+    preview.classList.remove('hidden');
+    document.getElementById('record-actions').classList.remove('hidden');
+  });
+  mediaRecorder.start();
+  recordingStartTime = Date.now();
+  document.getElementById('record-timer').textContent = '00:00';
+  recordingTimerInterval = setInterval(updateRecordTimer, 250);
+  document.getElementById('btn-start-record').classList.add('hidden');
+  document.getElementById('btn-stop-record').classList.remove('hidden');
+  statusEl.textContent = '';
+}
+
+function stopRecording(){
+  if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  if(micStream){ micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  clearInterval(recordingTimerInterval);
+  document.getElementById('btn-start-record').classList.remove('hidden');
+  document.getElementById('btn-stop-record').classList.add('hidden');
+}
+
+function resetRecording(){
+  recordedBlob = null;
+  recordedChunks = [];
+  const preview = document.getElementById('record-preview');
+  preview.classList.add('hidden');
+  preview.removeAttribute('src');
+  document.getElementById('record-actions').classList.add('hidden');
+  document.getElementById('record-timer').textContent = '00:00';
+  document.getElementById('record-status').textContent = '';
+}
+
+function cleanupRecording(){
+  if(mediaRecorder && mediaRecorder.state !== 'inactive'){
+    try{ mediaRecorder.stop(); }catch(e){}
+  }
+  if(micStream){ micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  clearInterval(recordingTimerInterval);
+  document.getElementById('btn-start-record').classList.remove('hidden');
+  document.getElementById('btn-stop-record').classList.add('hidden');
+  resetRecording();
+}
+
+document.getElementById('btn-start-record').addEventListener('click', startRecording);
+document.getElementById('btn-stop-record').addEventListener('click', stopRecording);
+document.getElementById('btn-rerecord').addEventListener('click', resetRecording);
+
+document.getElementById('btn-use-recording').addEventListener('click', async () => {
+  if(!recordedBlob) return;
+  const statusEl = document.getElementById('record-status');
+  const ext = extForMime(recordedBlob.type);
+  const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+  const filename = `opname-${stamp}.${ext}`;
+  const file = new File([recordedBlob], filename, { type: recordedBlob.type });
+  statusEl.textContent = 'Uploaden…';
+  statusEl.className = 'test-status';
+  try{
+    await uploadToGithub(file);
+    document.getElementById('new-filename-input').value = filename;
+    statusEl.textContent = '✓ Geüpload als ' + filename;
+    statusEl.className = 'test-status ok';
+    resetRecording();
+  }catch(err){
+    statusEl.textContent = '✗ ' + err.message;
+    statusEl.className = 'test-status fail';
+  }
+});
+
+/* ---------- GITHUB SETTINGS & UPLOAD ---------- */
+
+function openSettings(){
+  const cfg = getGhConfig() || {};
+  document.getElementById('gh-owner-input').value = cfg.owner || '';
+  document.getElementById('gh-repo-input').value = cfg.repo || '';
+  document.getElementById('gh-token-input').value = cfg.token || '';
+  document.getElementById('gh-test-status').textContent = '';
+  document.getElementById('settings-overlay').classList.remove('hidden');
+}
+
+function closeSettings(){
+  document.getElementById('settings-overlay').classList.add('hidden');
+}
+
+document.getElementById('btn-open-settings').addEventListener('click', openSettings);
+document.getElementById('btn-cancel-settings').addEventListener('click', closeSettings);
+
+document.getElementById('btn-save-settings').addEventListener('click', () => {
+  const owner = document.getElementById('gh-owner-input').value.trim();
+  const repo = document.getElementById('gh-repo-input').value.trim();
+  const token = document.getElementById('gh-token-input').value.trim();
+  if(!owner || !repo || !token){
+    showToast('Vul alle drie de velden in.', true);
+    return;
+  }
+  const ok = saveGhConfig({ owner, repo, token });
+  if(ok){
+    showToast('Instellingen opgeslagen');
+    closeSettings();
+  }else{
+    showToast('Opslaan van instellingen is niet gelukt.', true);
+  }
+});
+
+document.getElementById('btn-test-connection').addEventListener('click', async () => {
+  const owner = document.getElementById('gh-owner-input').value.trim();
+  const repo = document.getElementById('gh-repo-input').value.trim();
+  const token = document.getElementById('gh-token-input').value.trim();
+  const statusEl = document.getElementById('gh-test-status');
+  if(!owner || !repo || !token){
+    statusEl.textContent = 'Vul alle velden in.';
+    statusEl.className = 'test-status fail';
+    return;
+  }
+  statusEl.textContent = 'Verbinding testen…';
+  statusEl.className = 'test-status';
+  try{
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' }
+    });
+    if(res.ok){
+      statusEl.textContent = '✓ Verbinding gelukt';
+      statusEl.className = 'test-status ok';
+    }else if(res.status === 401){
+      statusEl.textContent = '✗ Token ongeldig of verlopen';
+      statusEl.className = 'test-status fail';
+    }else if(res.status === 404){
+      statusEl.textContent = '✗ Repository niet gevonden — controleer naam';
+      statusEl.className = 'test-status fail';
+    }else{
+      statusEl.textContent = '✗ Fout (code ' + res.status + ')';
+      statusEl.className = 'test-status fail';
+    }
+  }catch(e){
+    statusEl.textContent = '✗ Geen verbinding mogelijk';
+    statusEl.className = 'test-status fail';
+  }
+});
+
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = () => reject(new Error('Bestand lezen is mislukt'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadToGithub(file){
+  const cfg = getGhConfig();
+  if(!cfg) throw new Error('Stel eerst GitHub-instellingen in (tandwiel-knop)');
+
+  const path = 'audio/' + encodeURIComponent(file.name);
+  const apiUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${path}`;
+  const base64 = await fileToBase64(file);
+
+  let sha = null;
+  try{
+    const getRes = await fetch(apiUrl, {
+      headers: { Authorization: `Bearer ${cfg.token}`, Accept: 'application/vnd.github+json' }
+    });
+    if(getRes.ok){
+      const data = await getRes.json();
+      sha = data.sha;
+    }
+  }catch(e){ /* bestand bestaat nog niet, dat is prima */ }
+
+  const body = { message: `Audio toegevoegd: ${file.name}`, content: base64 };
+  if(sha) body.sha = sha;
+
+  const putRes = await fetch(apiUrl, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${cfg.token}`,
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if(!putRes.ok){
+    let message = 'Upload mislukt (code ' + putRes.status + ')';
+    try{
+      const err = await putRes.json();
+      if(err && err.message){
+        message = /too large/i.test(err.message)
+          ? 'Bestand is te groot voor upload via de app (richtlijn: tot circa 20 MB). Upload het handmatig via github.com.'
+          : err.message;
+      }
+    }catch(e){}
+    throw new Error(message);
+  }
+  return true;
+}
+
+document.getElementById('gh-upload-input').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const statusEl = document.getElementById('upload-status');
+  statusEl.textContent = 'Uploaden…';
+  statusEl.className = 'test-status';
+  try{
+    await uploadToGithub(file);
+    document.getElementById('new-filename-input').value = file.name;
+    statusEl.textContent = '✓ Geüpload als ' + file.name;
+    statusEl.className = 'test-status ok';
+  }catch(err){
+    statusEl.textContent = '✗ ' + err.message;
+    statusEl.className = 'test-status fail';
+  }
+});
+
+/* ---------- MODAL (ADD / EDIT) ---------- */
+
+function openModal(editId){
+  editingId = editId || null;
+  const heading = document.getElementById('modal-heading');
+  const titleInput = document.getElementById('new-title-input');
+  const filenameInput = document.getElementById('new-filename-input');
+  const confirmBtn = document.getElementById('btn-confirm-add');
+  document.getElementById('test-status').textContent = '';
+  document.getElementById('upload-status').textContent = '';
+  document.getElementById('gh-upload-input').value = '';
+  cleanupRecording();
+
+  if(editingId){
+    const rec = state.recordings.find(r => r.id === editingId);
+    heading.textContent = 'Opname bewerken';
+    titleInput.value = rec.title;
+    filenameInput.value = rec.filename;
+    confirmBtn.textContent = 'Opslaan';
+  }else{
+    heading.textContent = 'Nieuwe opname';
+    titleInput.value = '';
+    filenameInput.value = '';
+    confirmBtn.textContent = 'Toevoegen';
+  }
+  document.getElementById('modal-overlay').classList.remove('hidden');
+  titleInput.focus();
+}
+
+function closeModal(){
+  document.getElementById('modal-overlay').classList.add('hidden');
+  cleanupRecording();
+  editingId = null;
+}
+
+document.getElementById('btn-add-recording').addEventListener('click', () => openModal(null));
+document.getElementById('btn-edit-recording').addEventListener('click', () => openModal(currentRecordingId));
+document.getElementById('btn-cancel-add').addEventListener('click', closeModal);
+
+document.getElementById('btn-test-file').addEventListener('click', () => {
+  const filename = document.getElementById('new-filename-input').value.trim();
+  const statusEl = document.getElementById('test-status');
+  if(!filename){ statusEl.textContent = 'Vul eerst een bestandsnaam in.'; statusEl.className = 'test-status fail'; return; }
+  statusEl.textContent = 'Bezig met testen…';
+  statusEl.className = 'test-status';
+  const testAudio = new Audio(audioUrl(filename));
+  const onOk = () => { statusEl.textContent = '✓ Bestand gevonden'; statusEl.className = 'test-status ok'; cleanup(); };
+  const onErr = () => { statusEl.textContent = '✗ Niet gevonden — controleer de naam'; statusEl.className = 'test-status fail'; cleanup(); };
+  function cleanup(){ testAudio.removeEventListener('canplay', onOk); testAudio.removeEventListener('error', onErr); }
+  testAudio.addEventListener('canplay', onOk);
+  testAudio.addEventListener('error', onErr);
+  testAudio.load();
+});
+
+document.getElementById('btn-confirm-add').addEventListener('click', () => {
+  const title = document.getElementById('new-title-input').value.trim();
+  const filename = document.getElementById('new-filename-input').value.trim();
+  if(!title || !filename) return;
+
+  if(editingId){
+    const rec = state.recordings.find(r => r.id === editingId);
+    rec.title = title;
+    rec.filename = filename;
+  }else{
+    state.recordings.push({ id: uid(), title, filename, createdAt: new Date().toISOString() });
+  }
+  saveState();
+  closeModal();
+  renderList();
+  if(currentRecordingId) renderDetail();
+});
+
+document.getElementById('new-filename-input').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') document.getElementById('btn-confirm-add').click();
+});
+
+/* ---------- OTHER EVENTS ---------- */
+
+document.getElementById('btn-back').addEventListener('click', closeDetail);
+
+document.getElementById('btn-delete-recording').addEventListener('click', () => {
+  const rec = state.recordings.find(r => r.id === currentRecordingId);
+  if(!rec) return;
+  const ok = confirm(`"${rec.title}" en alle bijbehorende geschiedenis verwijderen?`);
+  if(!ok) return;
+  state.recordings = state.recordings.filter(r => r.id !== currentRecordingId);
+  state.sessions = state.sessions.filter(s => s.recordingId !== currentRecordingId);
+  saveState();
+  closeDetail();
+});
+
+document.getElementById('btn-save-session').addEventListener('click', () => {
+  if(currentScores.some(v => v === 0)){
+    document.getElementById('validation-msg').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('validation-msg').classList.add('hidden');
+
+  state.sessions.push({
+    id: uid(),
+    recordingId: currentRecordingId,
+    timestamp: new Date().toISOString(),
+    scores: [...currentScores]
+  });
+  saveState();
+  showToast('Sessie opgeslagen');
+
+  currentScores = [0,0,0,0];
+  renderRatingQuestions();
+  const rec = state.recordings.find(r => r.id === currentRecordingId);
+  renderStats(rec);
+  renderHistory(rec);
+});
+
+/* ---------- INIT ---------- */
+
+loadState();
+renderList();
+</script>
+</body>
+</html>
